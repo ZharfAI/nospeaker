@@ -5,6 +5,7 @@ struct ClassicsPanel: View {
     @Environment(AppModel.self) private var model
 
     var body: some View {
+        @Bindable var model = model
         VStack(alignment: .leading, spacing: 0) {
             HStack(alignment: .firstTextBaseline) {
                 Text("▸ THE CLASSICS").font(.mono(13, .bold))
@@ -15,6 +16,15 @@ struct ClassicsPanel: View {
                 .font(.mono(12))
                 .foregroundStyle(Color.mid)
                 .padding(.top, 4)
+            OptionRow(title: "dynamics") {
+                Button("EXPRESSIVE") { model.classicExpressive = true }
+                    .buttonStyle(ChipStyle(selected: model.classicExpressive, size: 11.5))
+                    .help("Phrases swell and ease off, downbeats lean, each note settles like a piano string")
+                Button("EVEN") { model.classicExpressive = false }
+                    .buttonStyle(ChipStyle(selected: !model.classicExpressive, size: 11.5))
+                    .help("Every note at the same level")
+            }
+            .padding(.top, 14)
 
             HStack(alignment: .center, spacing: 24) {
                 PianoRoll()
@@ -27,8 +37,8 @@ struct ClassicsPanel: View {
             ScrollView {
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 320), spacing: 10)], spacing: 10) {
                     ForEach(Classic.all) { piece in
-                        ClassicRow(piece: piece, playing: model.isPlaying(.classic(piece.id))) {
-                            model.toggle(.classic(piece.id))
+                        ClassicRow(piece: piece, playing: model.isPlaying(.classic(piece.id, expressive: model.classicExpressive))) {
+                            model.toggleClassic(piece.id)
                         }
                     }
                 }

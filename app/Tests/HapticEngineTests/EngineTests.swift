@@ -148,3 +148,49 @@ func `every classic reads cleanly, fills its bars, and stays in the motor's rang
 @Test func `classics have unique ids`() {
     #expect(Set(Classic.all.map(\.id)).count == Classic.all.count)
 }
+
+@Test(arguments: Classic.all)
+func `expressive dynamics stay in range and fade at the end`(piece: Classic) throws {
+    let notes = try piece.notes()
+    let levels = expressiveLevels(notes, beatsPerBar: piece.beatsPerBar, base: piece.dynamic)
+    #expect(levels.count == notes.count)
+    let played = zip(notes, levels).filter { $0.0.midi != nil }
+    #expect(played.allSatisfy { $0.1 >= 0.3 && $0.1 <= 1 })
+    #expect((played.last?.1 ?? 0) < (played.map(\.1).max() ?? 1), "\(piece.id): the last note should be softer than the loudest")
+}
+
+@Test func `downbeats lean and offbeats lighten`() throws {
+    // Two bars of one repeated note in 4/4 eighths, so only the metre shapes the levels.
+    let bars = try parseScore("C5:.5 C5:.5 C5:.5 C5:.5 C5:.5 C5:.5 C5:.5 C5:.5 | C5:.5 C5:.5 C5:.5 C5:.5 C5:.5 C5:.5 C5:.5 C5:.5")
+    var notes: [ScoreNote] = []
+    for bar in bars { var at = 0.0; for var n in bar { n.position = at; at += n.beats; notes.append(n) } }
+    let levels = expressiveLevels(notes, beatsPerBar: 4, base: 0.8)
+    #expect(levels[0] > levels[1])          // the downbeat over the "and" after it
+    #expect(levels[4] > levels[5])          // beat 3 over its "and"
+    #expect(levels[0] > levels[2])          // the downbeat over beat 2
+}
+
+@Test func `the Fifth lands on its long notes`() throws {
+    let piece = try #require(Classic.all.first { $0.id == "fifth" })
+    let notes = try piece.notes()
+    let levels = expressiveLevels(notes, beatsPerBar: piece.beatsPerBar, base: piece.dynamic)
+    let eFlat = try #require(notes.firstIndex { ($0.midi ?? 0) % 12 == 3 })   // E-flat, in whatever octave it was moved to
+    #expect(levels[eFlat] >= levels[eFlat - 1], "da-da-da-DUM: the E-flat shouldn't fall away")
+}
+
+@Test func `pieces keep their character: the Fifth is louder than Für Elise`() throws {
+    func mean(_ id: String) throws -> Double {
+        let piece = try #require(Classic.all.first { $0.id == id })
+        let notes = try piece.notes()
+        let levels = zip(notes, expressiveLevels(notes, beatsPerBar: piece.beatsPerBar, base: piece.dynamic)).filter { $0.0.midi != nil }.map(\.1)
+        return levels.reduce(0, +) / Double(levels.count)
+    }
+    #expect(try mean("fifth") > mean("fur-elise") + 0.15)
+}
+
+@Test func `a pickup starts so it ends on the downbeat`() throws {
+    let piece = try #require(Classic.all.first { $0.id == "fur-elise" })
+    let notes = try piece.notes()
+    #expect(notes[0].position == 1.0)      // E5 D#5 in 3/8: the last two sixteenths of a 1.5-beat bar
+    #expect(notes[2].position == 0)        // the first full bar's E5, on the downbeat
+}

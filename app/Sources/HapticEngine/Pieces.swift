@@ -17,7 +17,7 @@ enum Pieces {
         case .show: show(stage)
         case let .music(settings): MusicPlayer.play(settings, on: stage)
         case .instrument: instrument(stage, trackpads: trackpads)
-        case let .classic(id): playClassic(id, on: stage)
+        case let .classic(id, expressive): playClassic(id, expressive: expressive, on: stage)
         }
     }
 

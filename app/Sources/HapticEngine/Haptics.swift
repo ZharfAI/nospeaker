@@ -17,8 +17,8 @@ public enum Piece: Sendable, Equatable {
     case show
     case music(MusicSettings)
     case instrument
-    /// One of `Classic.all`, by id.
-    case classic(String)
+    /// One of `Classic.all`, by id; expressive dynamics, or every note at one level.
+    case classic(String, expressive: Bool)
 
     public var kind: Kind {
         switch self {

@@ -48,6 +48,12 @@ final class AppModel {
     /// What of the music the motor plays: the tune (one clean note), the kick drum, or both.
     var musicMelody = true { didSet { if musicMelody != oldValue { replayMusic() } } }
     var musicBeat = true { didSet { if musicBeat != oldValue { replayMusic() } } }
+    /// Classics with dynamics (phrasing, accents, a piano-like decay), or every note at one level.
+    var classicExpressive = true {
+        didSet {
+            if classicExpressive != oldValue, playing == .classic, case let .classic(id, _)? = lastPiece { playClassic(id) }
+        }
+    }
     let music = MusicApp()
 
     /// For design snapshots: no engine, no AppleScript.
@@ -103,7 +109,17 @@ final class AppModel {
     }
 
     /// This exact piece is playing (not just one of the same kind: every classic is a `.classic`).
-    func isPlaying(_ piece: Piece) -> Bool { playing == piece.kind && lastPiece == piece }
+    func isPlaying(_ piece: Piece) -> Bool {
+        guard playing == piece.kind, let lastPiece else { return false }
+        if case let .classic(a, _) = piece, case let .classic(b, _) = lastPiece { return a == b }
+        return lastPiece == piece
+    }
+
+    func playClassic(_ id: String) { play(.classic(id, expressive: classicExpressive)) }
+
+    func toggleClassic(_ id: String) {
+        if isPlaying(.classic(id, expressive: classicExpressive)) { stop() } else { playClassic(id) }
+    }
 
     func stop() {
         Haptics.shared.stop()
@@ -178,7 +194,7 @@ final class AppModel {
         case .music: playing = .music; stage = "playing"
         case .say: playing = .say; stage = "speaking"; sayText = "hello from the trackpad"
         case .play: playing = .instrument; stage = "playing"
-        case .classics: playing = .classic; stage = "Für Elise · Beethoven"; lastPiece = .classic("fur-elise")
+        case .classics: playing = .classic; stage = "Für Elise · Beethoven"; lastPiece = .classic("fur-elise", expressive: true)
         case .show: playing = .melody; stage = "an original hook"; lastPiece = .melody
         }
     }
