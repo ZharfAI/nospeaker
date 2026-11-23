@@ -28,10 +28,11 @@ import Foundation
 var stopRequested = false
 var skipRequested = false
 var keyPressed = false
-/// Leaving goes through the credits: the first Ctrl-C (or q, or esc) jumps there, the next one exits.
+/// q, esc or Ctrl-C quits at once: the motor stops, the terminal comes back, and it signs off. (It used to jump to
+/// the credits and wait there for another key, which read as "it won't close".)
 var jumpToCredits = false
 var inCredits = false
-func requestEnd() { if inCredits || jumpToCredits { stopRequested = true } else { jumpToCredits = true } }
+func requestEnd() { stopRequested = true }
 func interrupted() -> Bool { stopRequested || skipRequested || jumpToCredits }
 
 var timebase = mach_timebase_info_data_t()
@@ -320,6 +321,8 @@ func render(_ text: String) -> [Frame] {
     p.arguments = ["-o", url.path, "--file-format=WAVE", "--data-format=LEF32@16000"] + (voiceName.map { ["-v", $0] } ?? []) + [text]
     do { try p.run() } catch { fail("It couldn't run macOS's voice (/usr/bin/say), which it needs to talk.") }
     p.waitUntilExit()
+    // Ctrl-C reaches `say` too (same process group): that's quitting, not a broken voice.
+    if stopRequested { return [] }
     guard p.terminationStatus == 0, let file = try? AVAudioFile(forReading: url),
           let buf = AVAudioPCMBuffer(pcmFormat: file.processingFormat, frameCapacity: AVAudioFrameCount(file.length)),
           (try? file.read(into: buf)) != nil, let ch = buf.floatChannelData?[0] else {
@@ -1046,7 +1049,8 @@ func draw(_ cv: Canvas, _ s: LiveState, _ t: Double) {
         let blink = !muted && Int(t * 2.5) % 2 == 0
         cv.text(79 - chip.count, 21, chip, blink ? inkC : paperC, bg: blink ? faintC : inkC, bold: true)
     }
-    cv.text(2, 22, "space skip · q end", faintC)
+    // While typing a line, q is a letter: esc finishes, Ctrl-C quits.
+    cv.text(2, 22, s.inputActive ? "esc done · ctrl-c quit" : "space skip · q quit", faintC)
     // Scroller.
     let chars = Array(scrollText)
     for x in 0..<80 {
@@ -1077,7 +1081,7 @@ func drawSplash(_ cv: Canvas, _ s: LiveState, _ t: Double) {
     drawProof(cv, s, t, y: 17)
     cv.centered(19, "keep your hands off the trackpad until the end", dimC)
     let ready = s.stepTotal > 0 && done >= s.stepTotal
-    cv.centered(22, ready && s.muted != true ? "space to start anyway  ·  q end" : "space skip  ·  q end", dimC)
+    cv.centered(22, ready && s.muted != true ? "space to start anyway  ·  q quit" : "space skip  ·  q quit", dimC)
 }
 
 /// The proof, as an inverted banner: muted, or a blinking reminder to mute.
@@ -1500,7 +1504,9 @@ func show(visuals: Bool) {
         if visuals {
             keyPressed = false
             live { $0.waitingForKey = true }
-            while !keyPressed && !stopRequested { usleep(20_000) }
+            // Any key exits; so does waiting, so it never sits on the credits for good.
+            let leaveAt = now() + 20
+            while !keyPressed && !stopRequested && now() < leaveAt { usleep(20_000) }
         } else {
             pause(1.0)
         }
@@ -1546,7 +1552,7 @@ if flag("--help") || flag("-h") {
     NO SPEAKER · a90.com presents
     Your MacBook's trackpad has no speaker. This makes it talk anyway, through its haptic motor.
 
-      nospeaker                         the show (space skips a part, q goes to the end)
+      nospeaker                         the show (space skips a part, q quits)
       nospeaker "any words"             just say something
       nospeaker --sweep                 a rising tone, 100 Hz to 4 kHz
       --voice Daniel                    any voice from `say -v '?'`
@@ -1570,7 +1576,17 @@ let wantsSweep = flag("--sweep")
 preferExternal = flag("--external")
 if let unknown = args.first(where: { $0.hasPrefix("-") }) { usageError("\"\(unknown)\" isn't an option.") }
 
-signal(SIGINT) { _ in requestEnd() }
+/// A second Ctrl-C while it's still finishing quits on the spot. Only async-signal-safe calls: write the bytes
+/// that undo takeTerminal(), put the saved terminal settings back, and _exit.
+let emergencyReset: [UInt8] = Array("\u{1B}[?1006l\u{1B}[?1002l\u{1B}[?1000l\u{1B}[0m\u{1B}[2J\u{1B}[?25h\u{1B}[?1049l".utf8)
+signal(SIGINT) { _ in
+    guard stopRequested else { requestEnd(); return }
+    if terminalTaken {
+        emergencyReset.withUnsafeBufferPointer { _ = write(outFD, $0.baseAddress, $0.count) }
+        tcsetattr(STDIN_FILENO, TCSANOW, &savedTermios)
+    }
+    _exit(130)
+}
 signal(SIGTERM) { _ in stopRequested = true }
 atexit { restoreTerminal() }
 

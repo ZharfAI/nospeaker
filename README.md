@@ -28,7 +28,7 @@ One command. About a minute and a half. No speakers used.
 [ hands off the glass ]  until it asks you to touch it
 ```
 
-**Space** skips a part. **q** or **Ctrl-C** goes to the end.
+**Space** skips a part. **q**, **Esc** or **Ctrl-C** quits.
 
 ## 02 / run it
 
@@ -66,8 +66,8 @@ cd nospeaker
 ./nospeaker --sweep                  a rising tone, 100 Hz to 4 kHz
 
 --dark                               white on black
---plain                              no visuals
---external                           play through an external Magic Trackpad, plain text
+--plain                              no visuals, plain text
+--external                           play through an external Magic Trackpad
 ```
 
 ## 04 / needs
