@@ -11,7 +11,9 @@
 </p>
 
 <p align="center">
+  <a href="https://github.com/ZharfAI/nospeaker/releases/latest"><img alt="Download" src="https://img.shields.io/github/v/release/ZharfAI/nospeaker?label=download&color=1f1f1f"></a>
   <img alt="macOS 15 or later" src="https://img.shields.io/badge/macOS-15%2B-1f1f1f">
+  <img alt="Universal app" src="https://img.shields.io/badge/Apple%20silicon%20%2B%20Intel-universal-1f1f1f">
   <img alt="Swift 6.2" src="https://img.shields.io/badge/Swift-6.2-1f1f1f">
   <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/license-MIT-1f1f1f"></a>
 </p>
@@ -50,9 +52,18 @@ plays.
   <img src="docs/images/music-dark.png" width="49%" alt="The Music tab in dark mode">
 </p>
 
-## Build it
+## Download
 
-It needs macOS 15 or later and Xcode 26 or later (Swift tools 6.2):
+Get **NoSpeaker-1.0.zip** from the [latest release](https://github.com/ZharfAI/nospeaker/releases/latest), unzip
+it and drag **NoSpeaker** to Applications. It's signed with a Developer ID and notarized by Apple, and runs on
+Apple silicon and Intel Macs with macOS 15 or later.
+
+It needs a Force Touch trackpad: any MacBook from 2015 on, or a Magic Trackpad 2 or newer. The first time you
+play music, macOS asks to let NoSpeaker record system audio and control Music.
+
+## Build it from source
+
+It needs Xcode 26 or later (Swift tools 6.2):
 
 ```sh
 git clone https://github.com/ZharfAI/nospeaker
@@ -60,9 +71,7 @@ cd nospeaker/app
 ./build-app.sh install      # builds NoSpeaker.app and copies it to ~/Applications
 ```
 
-There's no download yet: an app anyone can open needs a Developer ID signature and Apple's notarization. The
-first time you play music, macOS asks to let NoSpeaker record system audio and control Music. More in
-[app/README.md](app/README.md).
+More in [app/README.md](app/README.md), including how a release is signed and notarized.
 
 ## Changes to the terminal show
 

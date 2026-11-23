@@ -22,7 +22,8 @@ icon="${NOSPEAKER_ICON:-../design/icon/icon-a.png}"
 echo "making the icon from $icon…"
 rm -rf build/NoSpeaker.iconset
 swift Support/make-icon.swift "$icon" build/NoSpeaker.iconset ../docs/images/icon.png >/dev/null
-iconutil -c icns build/NoSpeaker.iconset -o "$app/Contents/Resources/NoSpeaker.icns"
+iconutil -c icns build/NoSpeaker.iconset -o Support/NoSpeaker.icns     # also used by the Xcode project
+cp Support/NoSpeaker.icns "$app/Contents/Resources/NoSpeaker.icns"
 
 identity=$(security find-identity -v -p codesigning | sed -n 's/.*"\(Apple Development:[^"]*\)".*/\1/p' | head -n 1)
 codesign --force --sign "${identity:--}" "$app"

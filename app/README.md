@@ -24,6 +24,13 @@ swift test                # engine tests (silent: nothing plays)
 - `Sources/HapticEngine` drives the motors (MultitouchSupport, a private framework: it may change with any
   macOS update). `Sources/NoSpeaker` is the SwiftUI app.
 
+## Releases
+
+`NOSPEAKER_TEAM_ID=XXXXXXXXXX scripts/release.sh` builds `build/NoSpeaker-<version>.zip`: it generates the
+Xcode project from `project.yml` (xcodegen), archives a universal build with the hardened runtime, signs it with
+Developer ID through Xcode's automatic signing, has Apple notarize it, and staples the ticket. It needs Xcode
+signed in to an account on that team. The version comes from `Support/Info.plist`.
+
 Sound design (the voice, sweep, melody, beat, heartbeat, sparkle and instrument) comes from
 [nospeaker](https://github.com/os6/nospeaker) by Cody Collier, MIT License. The ZharfAI name and mark belong to
 ZharfAI and aren't covered by the license.

@@ -1,0 +1,50 @@
+# Xcode project for signed, notarized releases (scripts/release.sh). Generate it with `xcodegen generate`.
+# Day-to-day builds don't need it: ./build-app.sh uses Swift Package Manager.
+name: NoSpeaker
+options:
+  deploymentTarget:
+    macOS: "15.0"
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    MACOSX_DEPLOYMENT_TARGET: "15.0"
+    ONLY_ACTIVE_ARCH: NO
+    ARCHS: "$(ARCHS_STANDARD)"
+    DEAD_CODE_STRIPPING: YES
+    CODE_SIGN_STYLE: Automatic
+    ENABLE_HARDENED_RUNTIME: YES
+targets:
+  # The motor engine: no UI, nonisolated (as in Package.swift).
+  HapticEngine:
+    type: framework
+    platform: macOS
+    sources:
+      - path: Sources/HapticEngine
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: ai.zharf.nospeaker.HapticEngine
+        GENERATE_INFOPLIST_FILE: YES
+        SKIP_INSTALL: YES
+  NoSpeaker:
+    type: application
+    platform: macOS
+    scheme: {}
+    sources:
+      - path: Sources/NoSpeaker
+      - path: Support/NoSpeaker.icns
+        buildPhase: resources
+    dependencies:
+      - target: HapticEngine
+        embed: true
+    settings:
+      base:
+        PRODUCT_NAME: NoSpeaker
+        PRODUCT_BUNDLE_IDENTIFIER: ai.zharf.nospeaker
+        INFOPLIST_FILE: Support/Info.plist
+        GENERATE_INFOPLIST_FILE: NO
+        CODE_SIGN_ENTITLEMENTS: Support/NoSpeaker.entitlements
+        # The app module is main-actor by default, as in Package.swift.
+        SWIFT_DEFAULT_ACTOR_ISOLATION: MainActor
+        SWIFT_UPCOMING_FEATURE_NONISOLATED_NONSENDING_BY_DEFAULT: YES
+        SWIFT_UPCOMING_FEATURE_INFER_ISOLATED_CONFORMANCES: YES
+        LD_RUNPATH_SEARCH_PATHS: "$(inherited) @executable_path/../Frameworks"
