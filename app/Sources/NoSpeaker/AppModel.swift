@@ -45,6 +45,9 @@ final class AppModel {
     var voiceName: String?
     var musicSource: MusicSource = .appleMusic { didSet { if musicSource != oldValue { replayMusic() } } }
     var speakersToo = false { didSet { if speakersToo != oldValue { replayMusic() } } }
+    /// What of the music the motor plays: the tune (one clean note), the kick drum, or both.
+    var musicMelody = true { didSet { if musicMelody != oldValue { replayMusic() } } }
+    var musicBeat = true { didSet { if musicBeat != oldValue { replayMusic() } } }
     let music = MusicApp()
 
     /// For design snapshots: no engine, no AppleScript.
@@ -105,7 +108,12 @@ final class AppModel {
     }
 
     func playMusic() {
-        play(.music(musicSource, speakersToo: speakersToo))
+        var settings = MusicSettings()
+        settings.source = musicSource
+        settings.speakersToo = speakersToo
+        settings.melody = musicMelody
+        settings.beat = musicBeat
+        play(.music(settings))
     }
 
     func say() {

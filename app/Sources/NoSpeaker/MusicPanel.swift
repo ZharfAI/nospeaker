@@ -23,14 +23,24 @@ struct MusicPanel: View {
 
                 VStack(alignment: .leading, spacing: 3) {
                     Text(on ? model.stage : "music → motor, live").font(.mono(12, .bold))
-                    Text(on ? "trackpad volume \(Int(model.volume * 100))%" : "the strongest notes and the kick drum")
+                    Text(on ? "trackpad volume \(Int(model.volume * 100))%" : "the tune as one clean note, and the kick drum")
                         .font(.mono(11))
                         .foregroundStyle(Color.dim)
                 }
+                Spacer(minLength: 0)
+                NoteReadout()
             }
             .padding(.top, 22)
 
             VStack(alignment: .leading, spacing: 10) {
+                OptionRow(title: "play") {
+                    Button("MELODY") { model.musicMelody.toggle(); if !model.musicMelody && !model.musicBeat { model.musicBeat = true } }
+                        .buttonStyle(ChipStyle(selected: model.musicMelody, size: 11.5))
+                        .help("The tune, one note at a time, in the motor's cleanest octave")
+                    Button("BEAT") { model.musicBeat.toggle(); if !model.musicMelody && !model.musicBeat { model.musicMelody = true } }
+                        .buttonStyle(ChipStyle(selected: model.musicBeat, size: 11.5))
+                        .help("A thump on every kick drum")
+                }
                 OptionRow(title: "listen to") {
                     Button("APPLE MUSIC") { model.musicSource = .appleMusic }
                         .buttonStyle(ChipStyle(selected: model.musicSource == .appleMusic, size: 11.5))

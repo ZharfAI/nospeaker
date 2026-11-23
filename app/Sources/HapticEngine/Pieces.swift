@@ -15,7 +15,7 @@ enum Pieces {
         case .beat: beatAndRap(stage, voice: nil)
         case .sparkle: sparkle(stage)
         case .show: show(stage)
-        case let .music(source, speakersToo): MusicPlayer.play(source, speakersToo: speakersToo, on: stage)
+        case let .music(settings): MusicPlayer.play(settings, on: stage)
         case .instrument: instrument(stage, trackpads: trackpads)
         }
     }

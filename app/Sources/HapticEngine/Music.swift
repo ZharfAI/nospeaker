@@ -213,22 +213,49 @@ final class AudioTap {
 
 // MARK: - From music to motor
 
-/// Turns the newest slice of music into what the motor plays next.
+/// How the music plays on the motor.
+public struct MusicSettings: Sendable, Equatable {
+    public var source: MusicSource = .appleMusic
+    public var speakersToo = false
+    /// The tune: one clean note at a time.
+    public var melody = true
+    /// The kick drum: a thump.
+    public var beat = true
+    public init() {}
+}
+
+/// Turns the newest slice of music into what the motor plays next, kept simple on purpose: one note of the
+/// tune, rounded to the nearest semitone and moved into the octave where the motor rings cleanest, plus a
+/// thump on each kick drum. Chords and noise are left out: on one small motor they only buzz.
 struct MusicAnalyser {
-    struct Moment { var tones: [Tone] = []; var level: Float = 0; var step = 0.012; var loudness = 0.0 }
+    struct Moment { var tones: [Tone] = []; var level: Float = 0; var step = 0.03; var loudness = 0.0; var note = "" }
 
     let sampleRate: Double
+    var melody = true, beat = true
     static let size = 2048
+    /// Where the tune is played: F#5 to F#6, the motor's loudest, cleanest octave.
+    static let low = 740.0, high = 1480.0
+
     private let fft: FFT
     private let window: [Float]
     private var peakRMS: Float = 0.01
     private var bassAverage: Float = 0
     private var lastKick = -9.0
+    private var heldNote: Int?, heldSince = -9.0, heldLastClear = -9.0
+    private var candidate: Int?, candidateSince = 0.0
 
     init(sampleRate: Double) {
         self.sampleRate = sampleRate
         fft = FFT(size: Self.size)
         window = vDSP.window(ofType: Float.self, usingSequence: .hanningDenormalized, count: Self.size, isHalfWindow: false)
+    }
+
+    /// The pitch of a MIDI note, moved by octaves into the clean range.
+    static func motorHz(_ midi: Int) -> Double {
+        var f = 440 * pow(2, Double(midi - 69) / 12)
+        while f < low { f *= 2 }
+        while f >= high { f /= 2 }
+        return f
     }
 
     mutating func next(_ samples: [Float], at t: Double) -> Moment {
@@ -239,8 +266,8 @@ struct MusicAnalyser {
         peakRMS = max(rms, peakRMS * 0.9995, 0.003)
         let loud = rms / peakRMS
         moment.loudness = Double(min(1, loud))
-        guard loud > 0.05, rms > 1e-5 else { return moment }
-        let level = pow(loud, 0.7)
+        guard loud > 0.06, rms > 1e-5 else { heldNote = nil; candidate = nil; return moment }
+        let level = Double(pow(loud, 0.6))
 
         let mags = fft.magnitudes(vDSP.multiply(samples, window))
         let binHz = sampleRate / Double(Self.size)
@@ -252,37 +279,60 @@ struct MusicAnalyser {
         if bass > 2.2 * bassAverage, bass > 1e-6, t - lastKick > 0.15 { lastKick = t }
         bassAverage = 0.85 * bassAverage + 0.15 * bass
 
-        // The strongest notes the motor can play, favouring its clearest range.
-        let top = mags[bin(110)...bin(4000)].max() ?? 0
-        var peaks: [(hz: Double, score: Float)] = []
-        for k in bin(110)...bin(4000) where mags[k] > mags[k - 1] && mags[k] >= mags[k + 1] && mags[k] > top * 0.08 {
-            let a = log(mags[k - 1] + 1e-9), b = log(mags[k] + 1e-9), c = log(mags[k + 1] + 1e-9)
-            let shift = Double(0.5 * (a - c) / (a - 2 * b + c))
-            let hz = (Double(k) + (shift.isFinite ? max(-0.5, min(0.5, shift)) : 0)) * binHz
-            let weight: Float = hz < 250 ? 0.6 : hz > 3000 ? 0.7 : 1
-            peaks.append((hz, mags[k] * weight))
+        if melody, let note = tuneNote(mags, binHz: binHz, at: t) {
+            let f = Self.motorHz(note)
+            let age = t - heldSince
+            let attack = age < 0.012 ? 0.55 + 0.45 * age / 0.012 : 1
+            moment.tones.append(Tone(f, 0.75 * level * attack))
+            moment.note = Pieces.noteName(f)
+            // Restart on a whole number of periods (~30 ms), so the note rings instead of clicking.
+            moment.step = max(1, (0.03 * f).rounded()) / f
         }
-        peaks.sort { $0.score > $1.score }
-        var chosen: [(hz: Double, score: Float)] = []
-        for p in peaks where chosen.count < 3 && !chosen.contains(where: { max($0.hz, p.hz) / min($0.hz, p.hz) < 1.09 }) {
-            chosen.append(p)
-        }
-        if let best = chosen.first?.score, best > 0 {
-            for p in chosen { moment.tones.append(Tone(p.hz, 0.8 * Double(level) * pow(Double(p.score / best), 1.5))) }
-        }
-        // Restart on a whole number of the main note's periods, so it rings cleanly.
-        if let f = chosen.first?.hz { moment.step = max(1, (0.012 * f).rounded()) / f }
 
         let age = t - lastKick
-        if age < 0.14 {
-            let f = 150 + 850 * exp(-age / 0.018)
-            moment.tones.append(Tone(f, 1.1 * Double(min(1, loud)) * exp(-age / 0.05)))
-            moment.step = max(0.004, min(moment.step, 1 / f * max(1, (0.006 * f).rounded())))
+        if beat, age < 0.12 {
+            let f = 120 + 780 * exp(-age / 0.02)
+            moment.tones.append(Tone(f, Double(min(1, loud)) * exp(-age / 0.05)))
+            moment.step = min(moment.step, max(0.004, 1 / f))
         }
-        moment.tones.sort { $0.amp > $1.amp }
-        moment.tones = Array(moment.tones.prefix(4))
         moment.level = Float(min(1, moment.tones.reduce(0) { $0 + $1.amp }))
         return moment
+    }
+
+    /// The tune's note right now (a MIDI number), or nil. A harmonic sum finds the strongest pitch between
+    /// 150 Hz and 1.6 kHz; it has to stand out from the rest, and a new note has to last 50 ms before it
+    /// takes over, so the motor doesn't flicker between notes.
+    private mutating func tuneNote(_ mags: [Float], binHz: Double, at t: Double) -> Int? {
+        let lo = max(2, Int(150 / binHz)), hi = min(mags.count / 3 - 2, Int(1600 / binHz))
+        var best = lo, bestScore: Float = 0, sum: Float = 0
+        for k in lo...hi {
+            let h2 = max(mags[2 * k - 1], mags[2 * k], mags[2 * k + 1])
+            let h3 = max(mags[3 * k - 1], mags[3 * k], mags[3 * k + 1])
+            let score = mags[k] + 0.6 * h2 + 0.35 * h3
+            sum += mags[k]
+            if score > bestScore { bestScore = score; best = k }
+        }
+        let mean = sum / Float(hi - lo + 1)
+        let clear = mags[best] > 5 * mean
+        var note: Int?
+        if clear {
+            let a = log(mags[best - 1] + 1e-9), b = log(mags[best] + 1e-9), c = log(mags[best + 1] + 1e-9)
+            let shift = Double(0.5 * (a - c) / (a - 2 * b + c))
+            let hz = (Double(best) + (shift.isFinite ? max(-0.5, min(0.5, shift)) : 0)) * binHz
+            note = Int((69 + 12 * log2(hz / 440)).rounded())
+            heldLastClear = t
+        }
+        if let note, note != heldNote {
+            if note != candidate { candidate = note; candidateSince = t }
+            if t - candidateSince >= 0.05 || heldNote == nil && t - candidateSince >= 0.02 {
+                heldNote = note; heldSince = t; candidate = nil
+            }
+        } else if note == heldNote {
+            candidate = nil
+        }
+        // No clear note for a moment: let the held one go.
+        if t - heldLastClear > 0.12 { heldNote = nil }
+        return heldNote
     }
 }
 
@@ -323,11 +373,11 @@ final class FFT {
 // MARK: - The music loop
 
 enum MusicPlayer {
-    static func play(_ source: MusicSource, speakersToo: Bool, on stage: Stage) {
+    static func play(_ settings: MusicSettings, on stage: Stage) {
         stage.say("listening")
         let tap: AudioTap
         do {
-            tap = try AudioTap(source: source, muteSpeakers: source == .appleMusic && !speakersToo)
+            tap = try AudioTap(source: settings.source, muteSpeakers: settings.source == .appleMusic && !settings.speakersToo)
         } catch {
             musicLog.error("couldn't listen: \(error.explanation, privacy: .public)")
             stage.haptics.update { $0.problem = error.explanation }
@@ -335,6 +385,8 @@ enum MusicPlayer {
         }
         defer { tap.close(); musicLog.notice("stopped listening") }
         var analyser = MusicAnalyser(sampleRate: tap.sampleRate)
+        analyser.melody = settings.melody
+        analyser.beat = settings.beat
         var samples = [Float](repeating: 0, count: MusicAnalyser.size)
         let start = mach_absolute_time()
         var t = 0.0
@@ -351,7 +403,7 @@ enum MusicPlayer {
                 waiting = !playing
                 stage.say(waiting ? (heard ? "waiting for music" : "listening") : "playing")
             }
-            stage.haptics.update { $0.input = moment.loudness; if heard { $0.problem = nil } }
+            stage.haptics.update { $0.input = moment.loudness; $0.note = moment.note; if heard { $0.problem = nil } }
             if playing { stage.play(moment.tones, ms: moment.step * 1000 + 1, level: moment.level) }
             t += playing ? moment.step : 0.02
             // Fell behind (a busy moment): skip ahead rather than rushing to catch up.

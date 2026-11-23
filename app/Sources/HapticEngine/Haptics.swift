@@ -15,7 +15,7 @@ public enum Piece: Sendable, Equatable {
     case beat
     case sparkle
     case show
-    case music(MusicSource, speakersToo: Bool)
+    case music(MusicSettings)
     case instrument
 
     public var kind: Kind {
