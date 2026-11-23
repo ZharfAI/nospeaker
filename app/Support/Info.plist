@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>en</string>
+	<key>CFBundleExecutable</key>
+	<string>NoSpeaker</string>
+	<key>CFBundleIconFile</key>
+	<string>NoSpeaker</string>
+	<key>CFBundleIdentifier</key>
+	<string>app.nospeaker.NoSpeaker</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>NoSpeaker</string>
+	<key>CFBundleDisplayName</key>
+	<string>NoSpeaker</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>0.1</string>
+	<key>CFBundleVersion</key>
+	<string>1</string>
+	<key>LSApplicationCategoryType</key>
+	<string>public.app-category.music</string>
+	<key>LSMinimumSystemVersion</key>
+	<string>15.0</string>
+	<key>NSHighResolutionCapable</key>
+	<true/>
+	<key>NSPrincipalClass</key>
+	<string>NSApplication</string>
+	<key>NSAudioCaptureUsageDescription</key>
+	<string>NoSpeaker listens to the music you choose so it can play it through your trackpad. Nothing is recorded or saved.</string>
+	<key>NSAppleEventsUsageDescription</key>
+	<string>NoSpeaker asks Music what's playing and sends play, pause and skip, so you can control the song from here.</string>
+	<key>NSHumanReadableCopyright</key>
+	<string>Sound design from nospeaker by Cody Collier (github.com/os6/nospeaker, MIT License).</string>
+</dict>
+</plist>
