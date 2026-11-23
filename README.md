@@ -1,3 +1,53 @@
+> **This is ZharfAI's fork of [os6/nospeaker](https://github.com/os6/nospeaker)** by Cody Collier. It adds a
+> Mac app and a few fixes to the terminal show. Everything after the line below is the original README; its
+> one-line installer still installs the original build, without these changes.
+
+## ZharfAI edition: NoSpeaker for Mac
+
+A window for your trackpad's voice.
+
+- **Music** plays Apple Music through the trackpad: the tune as one clean note, and a thump on every kick drum.
+  The speakers can stay muted, so all you hear is the trackpad. (New, and still being tuned.)
+- **Classics** plays famous openings by Beethoven, Mozart, Bach, Chopin, Joplin, Satie and Pachelbel, one
+  clean note at a time, in the motor's best octave.
+- **Say** speaks any line, in any of your Mac's voices.
+- **Play** turns the trackpad into an instrument under your finger.
+- **Show** runs the heartbeat, the sweep, the melody, the beat and rap, or the whole show.
+- **Output**: the MacBook's trackpad, a Magic Trackpad, or both at once, with a volume control. Stop is
+  always one key away: **esc** or **⌘.**
+
+Build it from source. It needs macOS 15 or later and Xcode 26 or later (Swift tools 6.2):
+
+```sh
+git clone https://github.com/ZharfAI/nospeaker
+cd nospeaker/app
+./build-app.sh install      # builds NoSpeaker.app and copies it to ~/Applications
+```
+
+There's no download yet: an app anyone can open needs a Developer ID signature and Apple's notarization. The
+first time you play music, macOS asks to let NoSpeaker record system audio and control Music. More in
+[app/README.md](app/README.md).
+
+### Changes to the terminal show
+
+- **q**, **esc** or **Ctrl-C** quits at once. (It used to jump to the credits and wait there for another key.)
+- `--external` plays through a Magic Trackpad, by Gavin Wang ([os6/nospeaker#2](https://github.com/os6/nospeaker/pull/2)).
+
+Build it with `./build.sh`, then run `./nospeaker`.
+
+Tested on a MacBook Pro (M1 Max) with macOS 27.3, on its own trackpad and a Bluetooth Magic Trackpad.
+
+### Credits and license
+
+- nospeaker, its sound design and the terminal show: Cody Collier ([a90.com](https://a90.com)).
+- Playing through a Magic Trackpad (`--external`): Gavin Wang.
+- The Mac app, music through the trackpad and the classics: [ZharfAI](https://zharf.ai/en).
+
+The code is under the [MIT License](LICENSE). The ZharfAI name and mark belong to ZharfAI and aren't covered
+by it. The classics are public-domain compositions, written out for this app.
+
+---
+
 ```text
 ────────────────────────  a90.com presents  ─────────────────────────
 
