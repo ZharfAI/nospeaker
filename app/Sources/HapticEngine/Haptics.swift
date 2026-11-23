@@ -17,6 +17,8 @@ public enum Piece: Sendable, Equatable {
     case show
     case music(MusicSettings)
     case instrument
+    /// One of `Classic.all`, by id.
+    case classic(String)
 
     public var kind: Kind {
         switch self {
@@ -29,11 +31,12 @@ public enum Piece: Sendable, Equatable {
         case .show: .show
         case .music: .music
         case .instrument: .instrument
+        case .classic: .classic
         }
     }
 
     public enum Kind: String, Sendable, CaseIterable {
-        case say, heartbeat, sweep, melody, beat, sparkle, show, music, instrument
+        case say, heartbeat, sweep, melody, beat, sparkle, show, music, instrument, classic
     }
 }
 

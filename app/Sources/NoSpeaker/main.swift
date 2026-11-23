@@ -15,12 +15,15 @@ struct NoSpeakerApp: App {
         Window("NoSpeaker", id: "main") {
             ContentView()
                 .environment(model)
-                .frame(minWidth: 1080, minHeight: 720)
+                .frame(minWidth: 1080, minHeight: 780)
                 .onDisappear { model.stop() }
         }
         .windowStyle(.hiddenTitleBar)
-        .defaultSize(width: 1120, height: 800)
+        .defaultSize(width: 1120, height: 840)
         .commands {
+            CommandGroup(replacing: .appInfo) {
+                Button("About NoSpeaker") { showAbout() }
+            }
             CommandMenu("Playback") {
                 Button("Play Music Through the Trackpad") { model.playMusic() }
                     .keyboardShortcut(.return, modifiers: .command)
@@ -36,6 +39,23 @@ struct NoSpeakerApp: App {
             }
         }
     }
+}
+
+/// The About panel: who made what.
+func showAbout() {
+    let text = """
+    ZharfAI edition · zharf.ai
+
+    The window app, music through the trackpad, the classics and the Magic Trackpad output: ZharfAI.
+    The sound design and the terminal show: nospeaker by Cody Collier (a90.com), MIT License.
+    Playing through an external Magic Trackpad (--external): Gavin Wang.
+    """
+    let credits = NSAttributedString(string: text, attributes: [
+        .font: NSFont.monospacedSystemFont(ofSize: 10.5, weight: .regular),
+        .foregroundColor: NSColor.labelColor,
+    ])
+    NSApplication.shared.orderFrontStandardAboutPanel(options: [.credits: credits])
+    NSApplication.shared.activate()
 }
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
@@ -62,7 +82,7 @@ enum Snapshots {
                     .environment(model)
                     .environment(\.liveSample, sampleLive(tab))
                 let view = NSHostingView(rootView: root)
-                view.frame = NSRect(x: 0, y: 0, width: 1120, height: 800)
+                view.frame = NSRect(x: 0, y: 0, width: 1120, height: 840)
                 let window = NSWindow(contentRect: view.frame, styleMask: [.borderless], backing: .buffered, defer: false)
                 window.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
                 window.contentView = view
@@ -86,8 +106,8 @@ enum Snapshots {
         switch tab {
         case .music:
             live.playing = .music
-            live.tones = [Tone(523, 0.5), Tone(784, 0.3), Tone(1318, 0.15), Tone(880, 0.25)]
-            live.hz = 523; live.level = 0.7; live.input = 0.64
+            live.tones = [Tone(1046.5, 0.7), Tone(310, 0.45)]
+            live.hz = 1046.5; live.level = 0.8; live.input = 0.64; live.note = "C6"
         case .say:
             live.playing = .say
             live.caption = "hello from the trackpad"; live.captionStart = 9; live.captionDuration = 1.6
@@ -97,6 +117,9 @@ enum Snapshots {
             live.playing = .instrument
             live.touchDown = true; live.touchX = 0.62; live.touchY = 0.55
             live.note = "G6"; live.hz = 1568; live.level = 0.75
+        case .classics:
+            live.playing = .classic
+            live.note = "E6"; live.hz = 1318.5; live.level = 0.9
         case .show:
             live.playing = .melody
             live.note = "A6"; live.hz = 1760; live.level = 0.9

@@ -53,44 +53,48 @@ let asciiLogo = [
 ]
 let logoColumns = asciiLogo.map(\.count).max() ?? 0
 
-/// "a90.com presents" between rules, the slanted NO SPEAKER, and the tag rule under it — the terminal show's
-/// lockup, column for column.
+/// The terminal show's lockup, edition line on top: "◎ ZharfAI edition · nospeaker by a90.com" between
+/// rules, the slanted NO SPEAKER, and the tag rule under it. The rules take the logo's exact width.
 struct Lockup: View {
     var size: CGFloat = 11
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            ruleLine(center: "a90.com presents")
-                .padding(.bottom, size * 0.9)
-            Text(asciiLogo.joined(separator: "\n"))
-                .font(.mono(size, .bold))
-                .foregroundStyle(Color.ink)
-                .lineSpacing(0)
-                .fixedSize()
-                .accessibilityLabel("No Speaker")
-            tagLine
-                .padding(.top, size * 0.9)
-        }
-        .fixedSize()
+        Text(asciiLogo.joined(separator: "\n"))
+            .font(.mono(size, .bold))
+            .foregroundStyle(Color.ink)
+            .lineSpacing(0)
+            .fixedSize()
+            .accessibilityLabel("No Speaker")
+            .padding(.top, size * 2.6)
+            .padding(.bottom, size * 2.6)
+            .overlay(alignment: .top) { creditLine }
+            .overlay(alignment: .bottom) { tagLine }
     }
 
-    private func ruleLine(center: String) -> some View {
-        let side = (logoColumns - center.count - 4) / 2
-        return (Text(String(repeating: "─", count: side) + "  ").foregroundStyle(Color.dim)
-            + Text(center).foregroundStyle(Color.body).bold()
-            + Text("  " + String(repeating: "─", count: logoColumns - center.count - 4 - side)).foregroundStyle(Color.dim))
-            .font(.mono(size))
+    private var creditLine: some View {
+        HStack(spacing: size * 0.8) {
+            Rectangle().fill(Color.faint).frame(height: 1)
+            ZharfMark().fill(Color.ink).frame(width: size * 1.9, height: size * 1.9)
+            Text("ZharfAI edition").bold().foregroundStyle(Color.ink).fixedSize()
+            Text("·").foregroundStyle(Color.dim).fixedSize()
+            Text("nospeaker by a90.com").foregroundStyle(Color.body).fixedSize()
+            Rectangle().fill(Color.faint).frame(height: 1)
+        }
+        .font(.mono(size))
+        .fixedSize(horizontal: false, vertical: true)
+        .accessibilityElement(children: .combine)
     }
 
     private var tagLine: some View {
-        let left = "─  haptic voice synthesis  ", right = "  trackpad  ─"
-        let fill = String(repeating: "─", count: max(1, logoColumns - left.count - right.count))
-        return (Text("─  ").foregroundStyle(Color.dim)
-            + Text("haptic voice synthesis").foregroundStyle(Color.mid)
-            + Text("  " + fill + "  ").foregroundStyle(Color.dim)
-            + Text("trackpad").foregroundStyle(Color.ink).bold()
-            + Text("  ─").foregroundStyle(Color.dim))
-            .font(.mono(size))
+        HStack(spacing: size * 0.8) {
+            Rectangle().fill(Color.faint).frame(width: size, height: 1)
+            Text("haptic voice synthesis").foregroundStyle(Color.mid).fixedSize()
+            Rectangle().fill(Color.faint).frame(height: 1)
+            Text("trackpad").bold().foregroundStyle(Color.ink).fixedSize()
+            Rectangle().fill(Color.faint).frame(width: size, height: 1)
+        }
+        .font(.mono(size))
+        .fixedSize(horizontal: false, vertical: true)
     }
 }
 

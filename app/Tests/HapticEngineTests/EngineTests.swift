@@ -112,3 +112,39 @@ func `every note lands in the motor's clean octave`(hz: Double) {
     try await Task.sleep(for: .milliseconds(300))
     #expect(Haptics.shared.snapshot().playing == nil)
 }
+
+// MARK: - The classics
+
+@Test(arguments: Classic.all)
+func `every classic reads cleanly, fills its bars, and stays in the motor's range`(piece: Classic) throws {
+    let bars = try parseScore(piece.score)
+    #expect(bars.count >= 2)
+    for (i, bar) in bars.enumerated() {
+        let beats = bar.reduce(0) { $0 + $1.beats }
+        if i == 0 || i == bars.count - 1 {
+            #expect(beats <= piece.beatsPerBar + 1e-9, "\(piece.id) bar \(i + 1) has \(beats) beats")
+        } else {
+            #expect(abs(beats - piece.beatsPerBar) < 1e-9, "\(piece.id) bar \(i + 1) has \(beats) beats, not \(piece.beatsPerBar)")
+        }
+    }
+    let hz = try piece.notes().compactMap(\.midi).map { 440 * pow(2, Double($0 - 69) / 12) }
+    #expect(!hz.isEmpty)
+    #expect(hz.allSatisfy { $0 >= 150 && $0 <= 4000 }, "\(piece.id): \(hz.min() ?? 0)–\(hz.max() ?? 0) Hz")
+    #expect(piece.seconds > 2.5 && piece.seconds < 45, "\(piece.id) lasts \(piece.seconds) s")
+}
+
+@Test func `note names read as MIDI numbers, and typos are refused`() throws {
+    #expect(try midiNumber("A4") == 69)
+    #expect(try midiNumber("C4") == 60)
+    #expect(try midiNumber("C#4") == 61)
+    #expect(try midiNumber("Db4") == 61)
+    #expect(try midiNumber("Bb3") == 58)
+    for bad in ["H4", "C", "E#", "Cx4", "c4", "C9"] {
+        #expect(throws: ScoreError.self) { try midiNumber(bad) }
+    }
+    #expect(throws: ScoreError.self) { try parseScore("E5:.25 D5 | C5:1") }
+}
+
+@Test func `classics have unique ids`() {
+    #expect(Set(Classic.all.map(\.id)).count == Classic.all.count)
+}

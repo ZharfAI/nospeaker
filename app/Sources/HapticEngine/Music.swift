@@ -9,8 +9,8 @@ import Foundation
 import os
 import Synchronization
 
-/// Read with: log stream --predicate 'subsystem == "app.nospeaker"'
-let musicLog = Logger(subsystem: "app.nospeaker", category: "music")
+/// Read with: log stream --predicate 'subsystem == "ai.zharf.nospeaker"'
+let musicLog = Logger(subsystem: "ai.zharf.nospeaker", category: "music")
 
 public enum MusicSource: String, Sendable, CaseIterable, Identifiable {
     case appleMusic, everything

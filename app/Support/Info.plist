@@ -9,7 +9,7 @@
 	<key>CFBundleIconFile</key>
 	<string>NoSpeaker</string>
 	<key>CFBundleIdentifier</key>
-	<string>app.nospeaker.NoSpeaker</string>
+	<string>ai.zharf.nospeaker</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
@@ -35,6 +35,6 @@
 	<key>NSAppleEventsUsageDescription</key>
 	<string>NoSpeaker asks Music what's playing and sends play, pause and skip, so you can control the song from here.</string>
 	<key>NSHumanReadableCopyright</key>
-	<string>Sound design from nospeaker by Cody Collier (github.com/os6/nospeaker, MIT License).</string>
+	<string>ZharfAI edition (zharf.ai). Based on nospeaker by Cody Collier (github.com/os6/nospeaker), MIT License.</string>
 </dict>
 </plist>

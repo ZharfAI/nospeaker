@@ -40,6 +40,7 @@ struct ContentView: View {
         case .music: MusicPanel()
         case .say: SayPanel()
         case .play: PlayPanel()
+        case .classics: ClassicsPanel()
         case .show: ShowPanel()
         }
     }
@@ -124,6 +125,19 @@ struct Sidebar: View {
             MotorReadout().padding(.top, 10)
 
             Spacer(minLength: 20)
+
+            Link(destination: URL(string: "https://zharf.ai/en")!) {
+                HStack(spacing: 12) {
+                    ZharfMark().fill(Color.ink).frame(width: 28, height: 28)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("ZharfAI edition").font(.mono(12, .bold)).foregroundStyle(Color.ink)
+                        Text("zharf.ai ↗").font(.mono(11)).foregroundStyle(Color.dim)
+                    }
+                }
+            }
+            .buttonStyle(.plain)
+            .help("Made by ZharfAI. Based on nospeaker by Cody Collier (a90.com).")
+            .padding(.bottom, 16)
 
             Button {
                 model.stop()
@@ -254,7 +268,7 @@ struct SpeakerChip: View {
     }
 }
 
-let scrollText = "      ·  a90.com presents  NO SPEAKER  ·    the trackpad has no speaker. every sound you hear is its haptic motor, driven through MultitouchSupport, a private macOS framework.    range: 100 to 4000 vibrations per second.    music: the strongest notes and the kick drum, retriggered every few milliseconds.    voice: two formants, retriggered on every pitch beat.    thanks for listening.    a90.com    "
+let scrollText = "      ·  NO SPEAKER, ZharfAI edition  ·  zharf.ai  ·  based on nospeaker by a90.com  ·    the trackpad has no speaker. every sound you hear is its haptic motor, driven through MultitouchSupport, a private macOS framework.    range: 100 to 4000 vibrations per second.    music: the strongest notes and the kick drum, retriggered every few milliseconds.    voice: two formants, retriggered on every pitch beat.    thanks for listening.    a90.com    "
 
 /// The scroller along the bottom, stepping one character at a time, twelve a second, like the terminal show's.
 /// Two copies side by side so the seam never shows; laid out once, only moved.
@@ -271,7 +285,7 @@ struct Marquee: View {
             }
             .offset(x: width > 0 ? -(step * width / characters).rounded() : 0)
         }
-        .frame(maxWidth: .infinity, minHeight: 24, maxHeight: 24, alignment: .leading)
+        .frame(minWidth: 0, maxWidth: .infinity, minHeight: 24, maxHeight: 24, alignment: .leading)
         .padding(.horizontal, 20)
         .clipped()
         .background(Color.paper)

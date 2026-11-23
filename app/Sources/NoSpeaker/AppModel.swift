@@ -19,7 +19,7 @@ final class AppModel {
     }
 
     enum Tab: String, CaseIterable, Identifiable {
-        case music, say, play, show
+        case music, say, play, classics, show
         var id: String { rawValue }
         var number: Int { Tab.allCases.firstIndex(of: self)! + 1 }
     }
@@ -99,8 +99,11 @@ final class AppModel {
     }
 
     func toggle(_ piece: Piece) {
-        if playing == piece.kind { stop() } else { play(piece) }
+        if isPlaying(piece) { stop() } else { play(piece) }
     }
+
+    /// This exact piece is playing (not just one of the same kind: every classic is a `.classic`).
+    func isPlaying(_ piece: Piece) -> Bool { playing == piece.kind && lastPiece == piece }
 
     func stop() {
         Haptics.shared.stop()
@@ -175,7 +178,8 @@ final class AppModel {
         case .music: playing = .music; stage = "playing"
         case .say: playing = .say; stage = "speaking"; sayText = "hello from the trackpad"
         case .play: playing = .instrument; stage = "playing"
-        case .show: playing = .melody; stage = "an original hook"
+        case .classics: playing = .classic; stage = "Für Elise · Beethoven"; lastPiece = .classic("fur-elise")
+        case .show: playing = .melody; stage = "an original hook"; lastPiece = .melody
         }
     }
 
