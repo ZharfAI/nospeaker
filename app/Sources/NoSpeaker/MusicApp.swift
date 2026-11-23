@@ -178,7 +178,7 @@ final class MusicApp {
 
     /// Sample content for design snapshots only.
     func showSample() {
-        state = .playing; title = "Sample Song"; artist = "Sample Artist"; album = "Sample Album"
-        duration = 214; position = 83; positionAt = Date()
+        state = .playing; title = "Clair de lune"; artist = "Claude Debussy"; album = "Suite bergamasque"
+        duration = 301; position = 96; positionAt = Date()
     }
 }

@@ -1,61 +1,90 @@
-// Draws NoSpeaker's icon at every size macOS wants: ink on paper, a trackpad with a sound wave running
-// through it. Usage: swift make-icon.swift <folder.iconset>
+// Builds NoSpeaker's icon from the artwork in design/icon/ (made with Codex image generation): the artwork's
+// body, measured from its alpha channel, is fitted to the macOS icon grid (an 824 px rounded square on 1024),
+// over an opaque base, with the standard drop shadow, at every size macOS wants.
+//
+//   swift make-icon.swift <artwork.png> <out.iconset> [preview.png]
 import AppKit
 
-let folder = URL(fileURLWithPath: CommandLine.arguments.count > 1 ? CommandLine.arguments[1] : "NoSpeaker.iconset")
-try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+let args = CommandLine.arguments
+guard args.count >= 3, let src = CGImageSourceCreateWithURL(URL(fileURLWithPath: args[1]) as CFURL, nil),
+      let art = CGImageSourceCreateImageAtIndex(src, 0, nil) else {
+    print("usage: make-icon <artwork.png> <out.iconset> [preview.png]"); exit(2)
+}
 
-func draw(pixels: Int) -> Data {
+/// The artwork's rounded-square body (top-left origin) and its colour. Generated artwork comes with a soft,
+/// uneven shadow halo, so the body is found by colour, not transparency: its colour is read just inside the
+/// top edge, then the edges are found by scanning in from the outside along the middle row and column.
+func measure(_ image: CGImage) -> (body: CGRect, base: CGColor) {
+    let w = image.width, h = image.height
+    let ctx = CGContext(data: nil, width: w, height: h, bitsPerComponent: 8, bytesPerRow: 0,
+                        space: CGColorSpace(name: CGColorSpace.sRGB)!, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
+    ctx.draw(image, in: CGRect(x: 0, y: 0, width: w, height: h))
+    let row = ctx.bytesPerRow
+    let px = ctx.data!.bindMemory(to: UInt8.self, capacity: row * h)
+    func rgba(_ x: Int, _ y: Int) -> (Int, Int, Int, Int) {     // memory row 0 is the top
+        let i = y * row + x * 4
+        return (Int(px[i]), Int(px[i + 1]), Int(px[i + 2]), Int(px[i + 3]))
+    }
+    // The body's colour: a little below the top edge, in the middle (above any artwork in the centre).
+    var y0 = 0
+    while y0 < h / 2 && rgba(w / 2, y0).3 < 250 { y0 += 1 }
+    let body = rgba(w / 2, y0 + h / 16)
+    func isBody(_ x: Int, _ y: Int) -> Bool {
+        let c = rgba(x, y)
+        return c.3 > 250 && abs(c.0 - body.0) + abs(c.1 - body.1) + abs(c.2 - body.2) < 110
+    }
+    var left = 0; while left < w / 2 && !isBody(left, h / 2) { left += 1 }
+    var right = w - 1; while right > w / 2 && !isBody(right, h / 2) { right -= 1 }
+    var top = 0; while top < h / 2 && !isBody(w / 2, top) { top += 1 }
+    var bottom = h - 1; while bottom > h / 2 && !isBody(w / 2, bottom) { bottom -= 1 }
+    let rect = CGRect(x: CGFloat(left), y: CGFloat(top), width: CGFloat(right - left + 1), height: CGFloat(bottom - top + 1))
+    let base = CGColor(srgbRed: CGFloat(body.0) / 255, green: CGFloat(body.1) / 255, blue: CGFloat(body.2) / 255, alpha: 1)
+    return (rect, base)
+}
+
+let (artBody, baseColour) = measure(art)
+print("artwork body \(artBody)")
+
+func render(pixels: Int) -> NSBitmapImageRep {
     let rep = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: pixels, pixelsHigh: pixels, bitsPerSample: 8,
                                samplesPerPixel: 4, hasAlpha: true, isPlanar: false, colorSpaceName: .deviceRGB,
                                bytesPerRow: 0, bitsPerPixel: 0)!
     NSGraphicsContext.saveGraphicsState()
     NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: rep)
-    let cg = NSGraphicsContext.current!.cgContext
-    let s = CGFloat(pixels) / 1024
-    cg.scaleBy(x: s, y: s)
-
-    let paper = CGColor(srgbRed: 246 / 255, green: 245 / 255, blue: 241 / 255, alpha: 1)
-    let ink = CGColor(srgbRed: 12 / 255, green: 12 / 255, blue: 12 / 255, alpha: 1)
-
-    // The body: Apple's icon grid (824 pt on 1024), with a soft drop shadow.
+    let ctx = NSGraphicsContext.current!.cgContext
+    ctx.interpolationQuality = .high
+    ctx.scaleBy(x: CGFloat(pixels) / 1024, y: CGFloat(pixels) / 1024)
     let body = CGRect(x: 100, y: 100, width: 824, height: 824)
-    cg.saveGState()
-    cg.setShadow(offset: CGSize(width: 0, height: -10), blur: 28, color: CGColor(gray: 0, alpha: 0.28))
-    cg.addPath(CGPath(roundedRect: body, cornerWidth: 186, cornerHeight: 186, transform: nil))
-    cg.setFillColor(paper)
-    cg.fillPath()
-    cg.restoreGState()
-
-    // The trackpad.
-    let pad = CGRect(x: 192, y: 322, width: 640, height: 380)
-    cg.addPath(CGPath(roundedRect: pad, cornerWidth: 52, cornerHeight: 52, transform: nil))
-    cg.setStrokeColor(ink)
-    cg.setLineWidth(22)
-    cg.strokePath()
-
-    // The sound running through it: a wave that grows toward the middle and fades out.
-    let wave = CGMutablePath()
-    let left = pad.minX + 58, right = pad.maxX - 58, mid = pad.midY
-    for i in 0...400 {
-        let u = CGFloat(i) / 400
-        let x = left + (right - left) * u
-        let envelope = sin(.pi * u)
-        let y = mid + 108 * envelope * sin(2 * .pi * 4.5 * u)
-        if i == 0 { wave.move(to: CGPoint(x: x, y: y)) } else { wave.addLine(to: CGPoint(x: x, y: y)) }
-    }
-    cg.addPath(wave)
-    cg.setLineWidth(26)
-    cg.setLineCap(.round)
-    cg.setLineJoin(.round)
-    cg.strokePath()
-
+    let shape = CGPath(roundedRect: body, cornerWidth: 185, cornerHeight: 185, transform: nil)
+    ctx.saveGState()
+    // Shadows ignore the scale above (they're in device pixels), so size this one to the icon.
+    let k = CGFloat(pixels) / 1024
+    ctx.setShadow(offset: CGSize(width: 0, height: -10 * k), blur: 24 * k, color: CGColor(gray: 0, alpha: 0.3))
+    ctx.addPath(shape)
+    ctx.setFillColor(baseColour)
+    ctx.fillPath()
+    ctx.restoreGState()
+    ctx.saveGState()
+    ctx.addPath(shape)
+    ctx.clip()
+    // Inset the artwork's body a few pixels so its own soft edge stays outside the clip.
+    let inner = artBody.insetBy(dx: artBody.width * 0.012, dy: artBody.height * 0.012)
+    let sx = body.width / inner.width, sy = body.height / inner.height
+    let w = CGFloat(art.width), h = CGFloat(art.height)
+    ctx.draw(art, in: CGRect(x: body.minX - inner.minX * sx, y: body.minY - (h - inner.maxY) * sy, width: w * sx, height: h * sy))
+    ctx.restoreGState()
     NSGraphicsContext.restoreGraphicsState()
-    return rep.representation(using: .png, properties: [:])!
+    return rep
 }
 
-for (name, pixels) in [("16x16", 16), ("16x16@2x", 32), ("32x32", 32), ("32x32@2x", 64), ("128x128", 128),
-                       ("128x128@2x", 256), ("256x256", 256), ("256x256@2x", 512), ("512x512", 512), ("512x512@2x", 1024)] {
-    try draw(pixels: pixels).write(to: folder.appending(path: "icon_\(name).png"))
+let iconset = URL(fileURLWithPath: args[2])
+try? FileManager.default.removeItem(at: iconset)
+try FileManager.default.createDirectory(at: iconset, withIntermediateDirectories: true)
+for points in [16, 32, 128, 256, 512] {
+    for scale in [1, 2] {
+        let name = scale == 1 ? "icon_\(points)x\(points).png" : "icon_\(points)x\(points)@2x.png"
+        try render(pixels: points * scale).representation(using: .png, properties: [:])!.write(to: iconset.appending(path: name))
+    }
 }
-print("drew \(folder.path)")
+if args.count > 3 { try render(pixels: 512).representation(using: .png, properties: [:])!.write(to: URL(fileURLWithPath: args[3])) }
+print("drew \(iconset.path)")

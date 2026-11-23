@@ -1,22 +1,58 @@
-> **This is ZharfAI's fork of [os6/nospeaker](https://github.com/os6/nospeaker)** by Cody Collier. It adds a
-> Mac app and a few fixes to the terminal show. Everything after the line below is the original README; its
-> one-line installer still installs the original build, without these changes.
+<p align="center">
+  <img src="docs/images/icon.png" width="128" height="128" alt="NoSpeaker app icon: a black glass trackpad with a sound wave rising out of it">
+</p>
 
-## ZharfAI edition: NoSpeaker for Mac
+<h1 align="center">NoSpeaker for Mac</h1>
 
-A window for your trackpad's voice.
+<p align="center">
+  <b>Your trackpad has no speaker. This makes it one.</b><br>
+  Music, famous melodies and a voice, played through the trackpad's haptic motor.<br>
+  ZharfAI's edition of <a href="https://github.com/os6/nospeaker">nospeaker</a> by Cody Collier.
+</p>
+
+<p align="center">
+  <img alt="macOS 15 or later" src="https://img.shields.io/badge/macOS-15%2B-1f1f1f">
+  <img alt="Swift 6.2" src="https://img.shields.io/badge/Swift-6.2-1f1f1f">
+  <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/license-MIT-1f1f1f"></a>
+</p>
+
+<p align="center">
+  <img src="docs/images/hero.png" width="900" alt="NoSpeaker's window on a dark desktop: the Music tab, playing Clair de lune through a Magic Trackpad with the speakers muted">
+</p>
+
+## What it does
+
+<p align="center">
+  <img src="docs/images/what-it-does.png" width="760" alt="Illustration: a laptop with its speakers muted, and beside it a trackpad whose glass gives off music; a cutaway shows the small haptic motor under the glass">
+</p>
+
+A trackpad has no speaker, just a small motor under the glass that fakes the click. NoSpeaker drives that motor
+thousands of times a second, fast enough for the glass to make sound you can hear. Mute your Mac and it still
+plays.
 
 - **Music** plays Apple Music through the trackpad: the tune as one clean note, and a thump on every kick drum.
   The speakers can stay muted, so all you hear is the trackpad. (New, and still being tuned.)
 - **Classics** plays famous openings by Beethoven, Mozart, Bach, Chopin, Joplin, Satie and Pachelbel, one
-  clean note at a time, in the motor's best octave.
+  clean note at a time in the motor's best octave, with expressive dynamics: phrases swell and ease off,
+  downbeats lean, each note settles like a piano string.
 - **Say** speaks any line, in any of your Mac's voices.
 - **Play** turns the trackpad into an instrument under your finger.
 - **Show** runs the heartbeat, the sweep, the melody, the beat and rap, or the whole show.
 - **Output**: the MacBook's trackpad, a Magic Trackpad, or both at once, with a volume control. Stop is
   always one key away: **esc** or **⌘.**
 
-Build it from source. It needs macOS 15 or later and Xcode 26 or later (Swift tools 6.2):
+<p align="center">
+  <img src="docs/images/classics.png" width="760" alt="The Classics tab: a live ASCII piano roll above a list of famous pieces, Für Elise playing">
+</p>
+
+<p align="center">
+  <img src="docs/images/say.png" width="49%" alt="The Say tab: a line typed in, and its pitch and formants as the trackpad speaks it">
+  <img src="docs/images/music-dark.png" width="49%" alt="The Music tab in dark mode">
+</p>
+
+## Build it
+
+It needs macOS 15 or later and Xcode 26 or later (Swift tools 6.2):
 
 ```sh
 git clone https://github.com/ZharfAI/nospeaker
@@ -28,25 +64,32 @@ There's no download yet: an app anyone can open needs a Developer ID signature a
 first time you play music, macOS asks to let NoSpeaker record system audio and control Music. More in
 [app/README.md](app/README.md).
 
-### Changes to the terminal show
+## Changes to the terminal show
 
 - **q**, **esc** or **Ctrl-C** quits at once. (It used to jump to the credits and wait there for another key.)
 - `--external` plays through a Magic Trackpad, by Gavin Wang ([os6/nospeaker#2](https://github.com/os6/nospeaker/pull/2)).
 
-Build it with `./build.sh`, then run `./nospeaker`.
+Build it with `./build.sh`, then run `./nospeaker`. The original one-line installer below installs the
+original build, without these changes.
 
 Tested on a MacBook Pro (M1 Max) with macOS 27.3, on its own trackpad and a Bluetooth Magic Trackpad.
 
-### Credits and license
+## Credits and license
 
 - nospeaker, its sound design and the terminal show: Cody Collier ([a90.com](https://a90.com)).
 - Playing through a Magic Trackpad (`--external`): Gavin Wang.
 - The Mac app, music through the trackpad and the classics: [ZharfAI](https://zharf.ai/en).
+- The icon, the wallpaper behind the screenshot and the illustration were made with Codex image generation
+  (`design/`); the screenshots are the app's own renders (`NoSpeaker --snapshot`, composed by
+  `scripts/make-images.swift`).
 
 The code is under the [MIT License](LICENSE). The ZharfAI name and mark belong to ZharfAI and aren't covered
-by it. The classics are public-domain compositions, written out for this app.
+by it. The classics are public-domain compositions, written out for this app and checked against published
+editions.
 
 ---
+
+**The original README, as Cody Collier wrote it:**
 
 ```text
 ────────────────────────  a90.com presents  ─────────────────────────

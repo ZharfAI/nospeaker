@@ -17,9 +17,11 @@ mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources"
 cp .build/release/NoSpeaker "$app/Contents/MacOS/NoSpeaker"
 cp Support/Info.plist "$app/Contents/Info.plist"
 
-echo "drawing the icon…"
+# The icon: the artwork chosen from ../design/icon/ (made with Codex image generation), fitted to the macOS grid.
+icon="${NOSPEAKER_ICON:-../design/icon/icon-a.png}"
+echo "making the icon from $icon…"
 rm -rf build/NoSpeaker.iconset
-swift Support/make-icon.swift build/NoSpeaker.iconset >/dev/null
+swift Support/make-icon.swift "$icon" build/NoSpeaker.iconset ../docs/images/icon.png >/dev/null
 iconutil -c icns build/NoSpeaker.iconset -o "$app/Contents/Resources/NoSpeaker.icns"
 
 identity=$(security find-identity -v -p codesigning | sed -n 's/.*"\(Apple Development:[^"]*\)".*/\1/p' | head -n 1)
